@@ -2,7 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const REPO_NAME = '/navegador-ferroviario/'
+const REPO_NAME = '/navegadorferroviario/'
+
 
 export default defineConfig({
   base: REPO_NAME,
