@@ -346,6 +346,19 @@ function dijkstra(graph, starts, endSet) {
   return null;
 }
 
+// Retorna o terminal da linha na direção em que o passageiro vai
+function getSentido(lineNum, fromId, toId) {
+  const ordem = ORDEM[lineNum];
+  if (!ordem) return "";
+  const iFrom = ordem.indexOf(fromId);
+  const iTo   = ordem.indexOf(toId);
+  if (iFrom === -1 || iTo === -1) return MAPA[toId]?.nome || "";
+  // Se vai para frente (índice maior), terminal é o último da linha
+  // Se vai para trás (índice menor), terminal é o primeiro da linha
+  const terminalId = iTo > iFrom ? ordem[ordem.length-1] : ordem[0];
+  return MAPA[terminalId]?.nome || "";
+}
+
 function calcRota(oId, dId) {
   if (oId===dId) return null;
   const o=MAPA[oId], d=MAPA[dId];
@@ -368,7 +381,12 @@ function calcRota(oId, dId) {
     } else curSts.push({id:sid,nome:st.nome});
   });
   if (curSts.length) segs.push({line:curL,stations:curSts});
-  return {segs, totalEst:res.path.length-1, baldeacoes:segs.length-1, tempo:Math.round(res.cost)};
+  // Adiciona sentido real (terminal da linha) a cada segmento
+  const segsComSentido = segs.map(seg => ({
+    ...seg,
+    sentido: getSentido(seg.line, seg.stations[0].id, seg.stations[seg.stations.length-1].id)
+  }));
+  return {segs:segsComSentido, totalEst:res.path.length-1, baldeacoes:segs.length-1, tempo:Math.round(res.cost)};
 }
 
 function narrativa(rota, oNome, dNome) {
@@ -376,16 +394,15 @@ function narrativa(rota, oNome, dNome) {
   const {segs} = rota;
   if (segs.length===1) {
     const s=segs[0], ln=L[s.line];
-    const dir=s.stations[s.stations.length-1].nome;
-    return `Senhor(a), de ${oNome} o(a) senhor(a) pega a ${ln.nome} sentido ${dir} e desce em ${dNome}. Boa viagem!`;
+    return `Senhor(a), de ${oNome} o(a) senhor(a) pega a ${ln.nome} sentido ${s.sentido} e desce em ${dNome}. Boa viagem!`;
   }
   let txt=`Senhor(a), para ir de ${oNome} até ${dNome}: `;
   segs.forEach((seg,i)=>{
     const ln=L[seg.line];
-    const dir=seg.stations[seg.stations.length-1].nome;
-    if (i===0) txt+=`pegue a ${ln.nome} sentido ${dir} e desça em ${dir}`;
-    else if (i<segs.length-1) txt+=`; em seguida pegue a ${ln.nome} sentido ${dir} e desça em ${dir}`;
-    else txt+=`; por fim embarque na ${ln.nome} sentido ${dir} e desça em ${dNome}`;
+    const desce=seg.stations[seg.stations.length-1].nome;
+    if (i===0) txt+=`pegue a ${ln.nome} sentido ${seg.sentido} e desça em ${desce}`;
+    else if (i<segs.length-1) txt+=`; em seguida pegue a ${ln.nome} sentido ${seg.sentido} e desça em ${desce}`;
+    else txt+=`; por fim embarque na ${ln.nome} sentido ${seg.sentido} e desça em ${dNome}`;
   });
   return txt+". Boa viagem!";
 }
@@ -491,6 +508,7 @@ function SegCard({seg,isLast,isTransfer,proxLinha}) {
   const orig=seg.stations[0], dest=seg.stations[seg.stations.length-1];
   const nEst=seg.stations.length-1;
   const tempo=nEst*3+(isTransfer?5:0);
+  const sentido=seg.sentido||dest.nome;
   return(
     <div style={{display:"flex",gap:10,marginBottom:isLast?0:8}}>
       <div style={{display:"flex",flexDirection:"column",alignItems:"center",flexShrink:0,width:36}}>
@@ -509,7 +527,7 @@ function SegCard({seg,isLast,isTransfer,proxLinha}) {
             <span style={{color:"#888",fontSize:11}}>Embarca em</span>
             <span style={{color:"#fff",fontWeight:700,fontSize:13}}>{orig.nome}</span>
           </div>
-          <div style={{color:"#555",fontSize:11,marginLeft:21,marginBottom:6}}>sentido {dest.nome} · {nEst} parada{nEst!==1?"s":""}</div>
+          <div style={{color:"#555",fontSize:11,marginLeft:21,marginBottom:6}}>sentido {sentido} · {nEst} parada{nEst!==1?"s":""}</div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{color:isLast?"#4CAF50":"#FF9800",fontSize:13}}>{isLast?"⚑":"⇄"}</span>
             <span style={{color:"#888",fontSize:11}}>{isLast?"Desembarca em":"Baldeação em"}</span>
