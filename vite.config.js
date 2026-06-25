@@ -2,10 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const REPO_NAME = '/navegadorferroviario/'
-
 export default defineConfig({
-  base: REPO_NAME,
+  base: '/',
   plugins: [
     react(),
     VitePWA({
@@ -16,11 +14,11 @@ export default defineConfig({
         theme_color: '#080C18',
         background_color: '#080C18',
         display: 'standalone',
-        start_url: REPO_NAME,
-        scope: REPO_NAME,
+        start_url: '/',
+        scope: '/',
         icons: [
-          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
         ]
       },
       workbox: {
